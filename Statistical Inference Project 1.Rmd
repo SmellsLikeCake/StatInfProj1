@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache= TRUE, warning = FALSE)
 library(ggplot2)
+library(grid)
+library(gridExtra)
 ```
 
 ## Overview
@@ -76,7 +78,7 @@ theoretical_sd <- 1/l
 implied_sd - theoretical_sd
 ```
 
-## Approximately normal
+## Approximately Normal
 
 It was seen above that the distributions of means from 40 exponential draws was approximately normal (or gaussian) shaped. As the size and number of samples increases, the normality of distribution of the means increases. 
 
@@ -89,6 +91,62 @@ exp_draws <- data.frame(exp_draws, "draws")
 colnames(exp_draws) <- c("value", "type")
 data_comp <- rbind(means, exp_draws)
 head(data_comp)
-g <- ggplot(data_comp, aes(x = value))
-g + geom_histogram(binwidth = 0.5, fill = "light blue") + facet_grid(.~ type)
+g1 <- ggplot(means, aes(x = value)) + geom_histogram(binwidth = 0.5, fill = "light blue") + ggtitle("Distribution of sample means") + ylab("Count") + xlab("Means")
+g2 <- ggplot(exp_draws, aes(x = value)) + geom_histogram(binwidth = 3, fill = "light blue") + ggtitle("Distribution of exponential draws") + ylab("Count") + xlab("Draws")
+grid.arrange(g1, g2, ncol = 2)
 ```
+
+It can be seen that the first graph looks approximately bell-curve shaped whereas the second looks exponential.
+
+We can confirm the approximate gaussian nature of the distribution of the sample means by looking at the properties of the distribution and comparing them with a theoretical normal distribution centred around 5.
+
+A normal distribution with mean 5 would have equal density (50%) either side of the mean. 
+
+```{r normal mean}
+pnorm(0, lower.tail = TRUE)
+pnorm(0, lower.tail = FALSE)
+```
+
+The code below calculates how many of the 1000 data points fall either side of the mean in the distribution of the sample means.
+
+```{r 50% density}
+m <- mean(means[, 1])
+less_than_m <- sum(means[, 1] < m)
+more_than_m <- sum(means[, 1] > m)
+less_than_m / 1000
+more_than_m / 1000
+```
+
+This shows that 52.7% of the 1000 means were less than 5 and 47.3% were greater than 5. This is not exactly 50/50  but would approach this result as our sample size and number of simulations increased.
+
+The distribution of exponential draws has a very different density each side of the mean as shown below.
+```{r exp draws density}
+n <- mean(exp_draws[, 1])
+less_than_n <- sum(exp_draws[, 1] < n)
+more_than_n <- sum(exp_draws[, 1] > n)
+less_than_n / 1000
+more_than_n / 1000
+```
+
+We can also check to see whether the expected density of points falls within one standard deviation of the mean. For a normal distribution the density within one standard deviation is:
+
+```{r normal sd}
+pnorm(1) - pnorm(-1)
+```
+
+For the distribution of the sample means the density within one standard deviation is:
+
+```{r sd}
+s <- sd(means[, 1])
+first_sd <- sum(means[, 1] < (m+s)) - sum(means[, 1] < (m-s))
+first_sd / 1000
+```
+
+This compares to the density seen for the distribution of the 1000 exponential draws:
+```{r exp sd}
+t <- sd(exp_draws[, 1])
+first_td <- sum(exp_draws[, 1] < (n+t)) - sum(exp_draws[, 1] < (n-t))
+first_td / 1000
+```
+
+These properties of the distribution of the sample means show that the distribution is approximately gaussian.
