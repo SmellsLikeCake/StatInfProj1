@@ -1,0 +1,94 @@
+---
+title: "Statistical Inference Project 1"
+author: "Helen"
+date: "23 October 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache= TRUE, warning = FALSE)
+library(ggplot2)
+```
+
+## Overview
+
+This project compares the theory of the exponential distribution with simulated examples. This was done by taking the mean of 40 samples from an exponential distribution. This was repeated 1000 times, resulting in a sample of 1000 means.
+
+## Simulations
+
+For the purposes of this project lambda (l) was set to 0.2. From the properties of exponential distributions, this means that the mean and standard deviation of the exponential distribution are both equal to 5 (i.e. 1 / 0.2).
+
+The code below shows 40 draws from an exponential distribution. The mean of the 40 draws is then calculated and stored in m.
+
+```{r example sim}
+l <- 0.2
+draws <- rexp(40, l)
+draws
+m <- mean(draws)
+m
+```
+
+This was repeated 1000 times, resulting in a vector of 1000 means. Each mean was calculated by taking the average of 40 draws from the exponential distribution.
+
+```{r simulation}
+means <- NULL
+for (i in 1:1000) means <- c(means, mean(rexp(40, l)))
+means <- data.frame(means, "means")
+colnames(means) <- c("value", "type")
+```
+
+## Sample Mean versus Theoretical Mean
+
+The distribution of the 1000 means is plotted below in a histogram. The mean of the distribution is shown by the vertical magenta line.
+
+```{r sample mean}
+g <- ggplot(means, aes(means))
+g + geom_histogram(binwidth = 0.5, fill = "light blue") + geom_vline(xintercept = mean(means[, 1]), color = "magenta") + ggtitle("Distribution of sample means") + ylab("Count") + xlab("Sample means")
+```
+
+The mean of this distribution (i.e the "sample mean") is shown by the vertical magenta line. It can be seen that the sample mean is very slightly larger than the theoretical mean of 5. The differences are compared below.
+
+```{r compare sample mean}
+sample_mean <- mean(means[,1])
+theoretical_mean <- 1/l
+sample_mean - theoretical_mean
+```
+
+It can be seen that the means are close, but not the same. This is because the theoretical mean is the mean of the entire population of exponential draws. In other words, if we did the above experiment infinite times we would achieve the same mean. However, because we did not simulate infinite samples the result is slightly different due to randomness.
+
+## Sample Variance versus Theoretical Variance
+
+The theoretical standard deviation of the exponential distribution is the same as its mean. In this case, this is 5. The variance is the square of the standard deviation, i.e. 25.
+
+The variance of the distribution of means is related to the variance of the exponential distribution in the following way: *The variance of the exponential distribution / the sample size = the variance of the distribution of the means.*
+
+The R code below shows that the simulations imply a exponential distribution standard deviation which is approximately equal to the theoretical standard deviation.
+
+```{r sample variance}
+var_sample_means <- var(means[, 1])
+var_sample_means
+implied_var <- var_sample_means * 40
+implied_sd <- sqrt(implied_var)
+implied_sd
+
+theoretical_sd <- 1/l
+
+implied_sd - theoretical_sd
+```
+
+## Approximately normal
+
+It was seen above that the distributions of means from 40 exponential draws was approximately normal (or gaussian) shaped. As the size and number of samples increases, the normality of distribution of the means increases. 
+
+This is not the case if instead the exponential distribution is sampled without averaging. The graph below compares these two scenarios. The first panel shows the distribution of 1000 means of 40 exponential draws, and the second panel shows the distribution of 1000 exponential draws.
+
+```{r approx normal}
+exp_draws <- NULL
+for (i in 1:1000) exp_draws <- c(exp_draws,rexp(1, l))
+exp_draws <- data.frame(exp_draws, "draws")
+colnames(exp_draws) <- c("value", "type")
+data_comp <- rbind(means, exp_draws)
+head(data_comp)
+g <- ggplot(data_comp, aes(x = value))
+g + geom_histogram(binwidth = 0.5, fill = "light blue") + facet_grid(.~ type)
+```
